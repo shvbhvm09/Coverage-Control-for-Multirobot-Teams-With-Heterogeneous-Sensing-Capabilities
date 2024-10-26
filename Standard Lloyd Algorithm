@@ -180,15 +180,48 @@ function [Px, Py] = lloydsAlgorithm(Px, Py, crs, verCellHandle)
     end
 end
 
+function [v,c] = VoronoiBounded(x, y, bnd)
+    % VORONOIBOUNDED Returns a Voronoi diagram restricted to a polygonal region.
+    % 
+    % Input:   (x,y) set of points in R^2
+    %           bnd  an Mx2 matrix of polygonal vertices.
+    % Output:  v  - vertices of the Voronoi regions
+    %          c  - cells of the Voronoi regions, where cell k corresponds to
+    %              the Voronoi region of (x(k),y(k))
+    % 
+    % Made by: Aaron Becker, atbecker@uh.edu
+    v = []; c = [];
+    if isempty(x) || isempty(y)
+        return
+    end
+
+    % ensure the bounds are closed
+    bnd = [bnd; bnd(1, :)];
+
+    % Compute the Voronoi diagram
+    [v,c] = voronoi(x, y); % in order to get the voronoi cells (c) and vertices (v)
+
+    % Keep only the cells that are in the bounds
+    idx = false(length(c), 1); % find cells
+    for k = 1:length(c)
+        if all(inpolygon(v(c{k}, 1), v(c{k}, 2), bnd(:, 1), bnd(:, 2))
+            idx(k) = true;
+        end
+    end
+    v = v(idx, :);
+    c = c(idx);
+end
+
 function [Cx, Cy] = PolyCentroid(X, Y)
-    % POLYCENTROID returns the coordinates for the centroid of polygon with vertices X,Y
-    % The centroid of a non-self-intersecting closed polygon defined by (x,y) is
-    % given by the formulas: 
+    % PolyCentroid computes the centroid of a polygon defined by the vertices
+    % (X,Y).
+    % 
+    % The centroid (Cx, Cy) is given by the formulas: 
     %
     % Cx = (1/A) * integral(x*dy) 
     % Cy = (1/A) * integral(y*dx) 
     %
-    % where A is the area of the polygon.  If the polygon is self-intersecting,
+    % where A is the area of the polygon. If the polygon is self-intersecting,
     % this returns the centroid of the external shape (that is, the value of the
     % areas can be negative)
     X = [X; X(1)]; % close the polygon
@@ -197,4 +230,4 @@ function [Cx, Cy] = PolyCentroid(X, Y)
     Cx = sum((X(1:end-1) + X(2:end)) .* (X(1:end-1) .* Y(2:end) - Y(1:end-1) .* X(2:end))) / (3*A);
     Cy = sum((Y(1:end-1) + Y(2:end)) .* (X(1:end-1) .* Y(2:end) - Y(1:end-1) .* X(2:end))) / (3*A);
 end
-```
+'''
